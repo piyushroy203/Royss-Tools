@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to Text (OCR)</title>
+    <!-- Include Tesseract.js for OCR functionality -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --black: #0a0a0a; /* Deep black for background */
+            --card-bg: #1c1c1c; /* Slightly lighter black for container */
+            --neon-blue: #00d4ff; /* Neon blue for accents */
+            --neon-pink: #ff007a; /* Neon pink for highlights */
+            --neon-green: #39ff14; /* Neon green for secondary accents */
+            --text-white: #f5f5f5; /* White for primary text */
+            --text-grey: #b0b0b0; /* Light grey for secondary text */
+            --shadow: 0 0 10px rgba(0, 212, 255, 0.3); /* Neon glow shadow */
+            --radius: 5px; /* Minimal radius for sharp look */
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: var(--black);
+            color: var(--text-white);
+            text-align: center;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: auto;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--neon-blue);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 8px var(--neon-blue);
+            color: var(--neon-blue);
+        }
+
+        .input-group {
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: var(--text-grey);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--neon-blue);
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--black);
+            color: var(--text-white);
+            transition: var(--transition);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink);
+        }
+
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--neon-blue);
+            color: var(--black);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-blue);
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+
+        img {
+            margin-top: 10px;
+            max-width: 100%;
+            border-radius: var(--radius);
+            border: 1px solid var(--neon-green);
+        }
+
+        .result-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            border: 2px solid var(--neon-green);
+            border-radius: var(--radius);
+            background: var(--black);
+            color: var(--text-white);
+            font-size: 14px;
+            resize: vertical;
+            transition: var(--transition);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink);
+        }
+
+        p {
+            color: var(--text-grey);
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .copy-btn {
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+        }
+
+        .copy-btn:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Image to Text (OCR)</h2>
+        <div class="input-group">
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        <button onclick="extractText()">Extract Text</button>
+        <p id="status" class="hidden">Extracting text...</p>
+        <img id="preview" class="hidden">
+        <div id="result" class="result-container hidden">
+            <p>Extracted Text:</p>
+            <textarea id="extractedText" readonly></textarea>
+            <button class="copy-btn" onclick="copyText()">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        let originalImage;
+
+        // Preview the uploaded image
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            originalImage = e.target.files[0];
+            const preview = document.getElementById('preview');
+            preview.src = URL.createObjectURL(originalImage);
+            preview.classList.remove('hidden');
+        });
+
+        async function extractText() {
+            const fileInput = document.getElementById('imageInput');
+            const status = document.getElementById('status');
+            const result = document.getElementById('result');
+            const extractedText = document.getElementById('extractedText');
+
+            if (fileInput.files.length === 0) {
+                alert('Please upload an image first.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            status.classList.remove('hidden');
+            result.classList.add('hidden');
+
+            try {
+                // Use Tesseract.js to perform OCR
+                const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+                    logger: (m) => console.log(m) // Optional: Log progress
+                });
+                extractedText.value = text.trim() || 'No text detected in the image.';
+            } catch (error) {
+                extractedText.value = 'Error extracting text: ' + error.message;
+            }
+
+            status.classList.add('hidden');
+            result.classList.remove('hidden');
+        }
+
+        function copyText() {
+            const extractedText = document.getElementById('extractedText');
+            extractedText.removeAttribute('readonly'); // Temporarily make it editable for selection
+            extractedText.select();
+            document.execCommand('copy');
+            extractedText.setAttribute('readonly', 'true'); // Restore readonly state
+            alert('Text copied to clipboard!');
+        }
+    </script>
+</body>
+</html>
