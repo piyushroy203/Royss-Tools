@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Calculator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0d0d0d;
+            font-family: 'Arial', sans-serif;
+            color: #00ffcc;
+        }
+
+        .calculator {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            width: 340px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #00ffcc;
+        }
+
+        input[type="date"] {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        input[type="date"]:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #00ffcc;
+            color: #0d0d0d;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .calculate-btn {
+            background-color: #ff00ff;
+            color: #0d0d0d;
+            border-color: #ff00ff;
+        }
+
+        .calculate-btn:hover {
+            background-color: #00ffcc;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .clear-btn {
+            color: #ff5555;
+            border-color: #ff5555;
+        }
+
+        .clear-btn:hover {
+            background-color: #ff5555;
+            color: #0d0d0d;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #00ffcc;
+            background-color: #121212;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #00ffcc;
+            min-height: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2 style="margin: 0 0 20px; color: #00ffcc;">Age Calculator</h2>
+        <div class="input-group">
+            <label for="birthdate">Enter your birth date:</label>
+            <input type="date" id="birthdate" max="2025-05-26">
+        </div>
+        <button class="calculate-btn" onclick="calculateAge()">Calculate</button>
+        <button class="clear-btn" onclick="clearInput()">Clear</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function calculateAge() {
+            const birthdateInput = document.getElementById('birthdate').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!birthdateInput) {
+                resultDiv.textContent = 'Please select a birth date.';
+                resultDiv.style.color = '#ff5555';
+                return;
+            }
+
+            const birthDate = new Date(birthdateInput);
+            const today = new Date('2025-05-26'); // Current date as per system
+
+            if (birthDate > today) {
+                resultDiv.textContent = 'Birth date cannot be in the future.';
+                resultDiv.style.color = '#ff5555';
+                return;
+            }
+
+            let years = today.getFullYear() - birthDate.getFullYear();
+            let months = today.getMonth() - birthDate.getMonth();
+            let days = today.getDate() - birthDate.getDate();
+
+            if (days < 0) {
+                months--;
+                days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+            }
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            resultDiv.style.color = '#00ffcc';
+            resultDiv.textContent = `You are ${years} years, ${months} months, and ${days} days old.`;
+        }
+
+        function clearInput() {
+            document.getElementById('birthdate').value = '';
+            document.getElementById('result').textContent = '';
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                calculateAge();
+            } else if (event.key === 'Escape') {
+                clearInput();
+            }
+        });
+    </script>
+</body>
+</html>
