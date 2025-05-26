@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Compressor</title>
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --card-bg: #1c1c1c;
+            --neon-blue: #00d4ff;
+            --neon-pink: #ff007a;
+            --neon-green: #39ff14;
+            --text-white: #f5f5f5;
+            --text-grey: #b0b0b0;
+            --shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            --radius: 5px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: var(--black);
+            color: var(--text-white);
+            text-align: center;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: auto;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--neon-blue);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 8px var(--neon-blue);
+            color: var(--neon-blue);
+        }
+
+        .input-group {
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: var(--text-grey);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--neon-blue);
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--black);
+            color: var(--text-white);
+            transition: var(--transition);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink);
+        }
+
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--neon-blue);
+            color: var(--black);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-blue);
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+
+        p {
+            color: var(--text-grey);
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .download-btn {
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+            text-decoration: none;
+            display: inline-block;
+            padding: 10px;
+            border-radius: var(--radius);
+            color: var(--black);
+        }
+
+        .download-btn:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--black);
+            border-radius: var(--radius);
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 10px;
+            background-color: var(--neon-blue);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>PDF Compressor</h2>
+        <div class="input-group">
+            <label for="fileInput">Upload PDF to Compress:</label>
+            <input type="file" id="fileInput" accept=".pdf">
+        </div>
+        <button id="compressBtn">Compress PDF</button>
+        <div class="progress-container hidden" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p id="status" class="hidden">Compressing file... <span id="progressText">0%</span></p>
+        <div id="result" class="hidden">
+            <p>Compression Complete:</p>
+            <a id="download" href="#" class="download-btn">Download Compressed PDF</a>
+        </div>
+    </div>
+
+    <script>
+        // Using pdf-lib for client-side PDF manipulation
+        async function loadPdfLib() {
+            if (!window.PDFLib) {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+                document.head.appendChild(script);
+                await new Promise(resolve => {
+                    script.onload = resolve;
+                    script.onerror = () => {
+                        throw new Error('Failed to load PDF library');
+                    };
+                });
+            }
+            return window.PDFLib;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('fileInput');
+            const compressBtn = document.getElementById('compressBtn');
+            const status = document.getElementById('status');
+            const result = document.getElementById('result');
+            const downloadLink = document.getElementById('download');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            fileInput.addEventListener('change', () => {
+                result.classList.add('hidden');
+            });
+
+            compressBtn.addEventListener('click', async () => {
+                if (fileInput.files.length === 0) {
+                    alert('Please upload a PDF file first.');
+                    return;
+                }
+
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop().toLowerCase();
+                
+                if (fileExt !== 'pdf') {
+                    alert('Please upload a valid PDF file.');
+                    return;
+                }
+
+                // Client-side processing limit (5MB)
+                const maxFileSizeMB = 5;
+                const fileSizeMB = file.size / (1024 * 1024);
+                if (fileSizeMB > maxFileSizeMB) {
+                    alert(`File size (${fileSizeMB.toFixed(2)} MB) exceeds the maximum limit of ${maxFileSizeMB} MB for client-side processing.`);
+                    return;
+                }
+
+                status.classList.remove('hidden');
+                progressContainer.classList.remove('hidden');
+                result.classList.add('hidden');
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+
+                try {
+                    updateProgress(10, 'Loading PDF...');
+                    
+                    // Load PDFLib library
+                    const { PDFDocument } = await loadPdfLib();
+                    updateProgress(20, 'Processing PDF...');
+                    
+                    // Read the file
+                    const fileArrayBuffer = await file.arrayBuffer();
+                    updateProgress(30, 'Opening document...');
+                    
+                    // Load the PDF
+                    const pdfDoc = await PDFDocument.load(fileArrayBuffer);
+                    updateProgress(50, 'Optimizing...');
+                    
+                    // Save with basic optimization
+                    const compressedPdfBytes = await pdfDoc.save({
+                        useObjectStreams: true,
+                        // These are the closest to compression options available in pdf-lib
+                        // Real compression would require a server-side solution
+                    });
+                    updateProgress(90, 'Finalizing...');
+                    
+                    // Create download link
+                    const compressedBlob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+                    const outputUrl = URL.createObjectURL(compressedBlob);
+                    
+                    // Set download attributes
+                    downloadLink.href = outputUrl;
+                    const originalName = file.name.replace('.pdf', '');
+                    downloadLink.download = `${originalName}_compressed.pdf`;
+                    
+                    // Clean up URL when the page unloads
+                    window.addEventListener('beforeunload', () => {
+                        URL.revokeObjectURL(outputUrl);
+                    });
+                    
+                    // Force download when clicked
+                    downloadLink.onclick = (e) => {
+                        e.preventDefault();
+                        forceDownload(outputUrl, downloadLink.download);
+                    };
+                    
+                    updateProgress(100, 'Done!');
+                    status.classList.add('hidden');
+                    result.classList.remove('hidden');
+                    
+                } catch (error) {
+                    console.error('Compression error:', error);
+                    alert('Error during compression: ' + error.message);
+                    status.classList.add('hidden');
+                } finally {
+                    progressContainer.classList.add('hidden');
+                }
+            });
+
+            function updateProgress(percent, message = '') {
+                progressBar.style.width = percent + '%';
+                progressText.textContent = message || `${percent}%`;
+            }
+
+            function forceDownload(url, fileName) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        });
+    </script>
+</body>
+</html>
