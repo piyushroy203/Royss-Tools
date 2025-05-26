@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Word / Word to PDF Converter</title>
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --card-bg: #1c1c1c;
+            --neon-blue: #00d4ff;
+            --neon-pink: #ff007a;
+            --neon-green: #39ff14;
+            --text-white: #f5f5f5;
+            --text-grey: #b0b0b0;
+            --shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            --radius: 5px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: var(--black);
+            color: var(--text-white);
+            text-align: center;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: auto;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--neon-blue);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 8px var(--neon-blue);
+            color: var(--neon-blue);
+        }
+
+        .input-group {
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: var(--text-grey);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--neon-blue);
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--black);
+            color: var(--text-white);
+            transition: var(--transition);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink);
+        }
+
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--neon-blue);
+            color: var(--black);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-blue);
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+
+        p {
+            color: var(--text-grey);
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .download-btn {
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+            text-decoration: none;
+            display: inline-block;
+            padding: 10px;
+            border-radius: var(--radius);
+            color: var(--black);
+        }
+
+        .download-btn:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--black);
+            border-radius: var(--radius);
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 10px;
+            background-color: var(--neon-blue);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>PDF to Word / Word to PDF Converter</h2>
+        <div class="input-group">
+            <label for="conversionType">Select Conversion Type:</label>
+            <select id="conversionType">
+                <option value="pdf-to-word">PDF to Word</option>
+                <option value="word-to-pdf">Word to PDF</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <input type="file" id="fileInput" accept=".pdf,.docx">
+        </div>
+        <button onclick="convertFile()">Convert</button>
+        <div class="progress-container hidden" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p id="status" class="hidden">Converting file... <span id="progressText">0%</span></p>
+        <div id="result" class="hidden">
+            <p>Conversion Complete:</p>
+            <a id="download" href="#" class="download-btn">Download Converted File</a>
+        </div>
+    </div>
+
+    <script>
+        // Using pdf-lib for PDF operations and docx for Word operations
+        // These are client-side libraries that don't require server-side processing
+        
+        async function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Load required libraries dynamically
+        async function ensureLibrariesLoaded() {
+            if (!window.PDFLib || !window.docx) {
+                await Promise.all([
+                    loadScript('https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'),
+                    loadScript('https://unpkg.com/docx@7.8.2/build/index.js')
+                ]);
+            }
+            return true;
+        }
+
+        document.getElementById('conversionType').addEventListener('change', function() {
+            const conversionType = this.value;
+            const fileInput = document.getElementById('fileInput');
+            fileInput.accept = conversionType === 'pdf-to-word' ? '.pdf' : '.docx';
+            fileInput.value = '';
+            document.getElementById('result').classList.add('hidden');
+        });
+
+        async function convertFile() {
+            const fileInput = document.getElementById('fileInput');
+            const conversionType = document.getElementById('conversionType').value;
+            const status = document.getElementById('status');
+            const result = document.getElementById('result');
+            const downloadLink = document.getElementById('download');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            if (fileInput.files.length === 0) {
+                alert('Please upload a file first.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            
+            // Validate file type
+            if ((conversionType === 'pdf-to-word' && fileExt !== 'pdf') || 
+                (conversionType === 'word-to-pdf' && fileExt !== 'docx')) {
+                alert(`Please upload a ${conversionType === 'pdf-to-word' ? 'PDF' : 'DOCX'} file.`);
+                return;
+            }
+
+            // Validate file size (10MB limit for client-side processing)
+            const maxFileSizeMB = 10;
+            const fileSizeMB = file.size / (1024 * 1024);
+            if (fileSizeMB > maxFileSizeMB) {
+                alert(`File size (${fileSizeMB.toFixed(2)} MB) exceeds the maximum limit of ${maxFileSizeMB} MB for client-side processing.`);
+                return;
+            }
+
+            status.classList.remove('hidden');
+            progressContainer.classList.remove('hidden');
+            result.classList.add('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+
+            try {
+                await ensureLibrariesLoaded();
+                
+                const fileArrayBuffer = await file.arrayBuffer();
+                let outputBlob;
+                
+                if (conversionType === 'pdf-to-word') {
+                    // Simulate PDF to Word conversion (client-side limitation)
+                    // In a real app, you'd need a server for proper conversion
+                    updateProgress(30);
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate processing
+                    updateProgress(70);
+                    
+                    // Create a simple DOCX file (this won't actually convert the PDF content)
+                    const { Document, Paragraph, TextRun, Packer } = window.docx;
+                    const doc = new Document({
+                        sections: [{
+                            properties: {},
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun("PDF content would appear here in a real conversion"),
+                                        new TextRun({
+                                            text: " (This is a placeholder - real conversion requires server processing)",
+                                            bold: true
+                                        })
+                                    ]
+                                })
+                            ]
+                        }]
+                    });
+                    
+                    updateProgress(90);
+                    outputBlob = await Packer.toBlob(doc);
+                } 
+                else { // Word to PDF
+                    updateProgress(20);
+                    
+                    // Simulate Word to PDF conversion
+                    const { PDFDocument } = window.PDFLib;
+                    const pdfDoc = await PDFDocument.create();
+                    const page = pdfDoc.addPage([600, 800]);
+                    
+                    updateProgress(50);
+                    
+                    page.drawText("DOCX content would appear here in a real conversion", {
+                        x: 50,
+                        y: 700,
+                        size: 15,
+                    });
+                    page.drawText("(This is a placeholder - real conversion requires server processing)", {
+                        x: 50,
+                        y: 670,
+                        size: 12,
+                        color: window.PDFLib.rgb(0.7, 0.7, 0.7),
+                    });
+                    
+                    updateProgress(80);
+                    outputBlob = new Blob([await pdfDoc.save()], { type: 'application/pdf' });
+                }
+                
+                updateProgress(100);
+                
+                // Create download link
+                const outputUrl = URL.createObjectURL(outputBlob);
+                downloadLink.href = outputUrl;
+                downloadLink.download = conversionType === 'pdf-to-word' 
+                    ? file.name.replace('.pdf', '.docx') || 'converted.docx'
+                    : file.name.replace('.docx', '.pdf') || 'converted.pdf';
+                
+                // Clean up URL when the link is clicked
+                downloadLink.onclick = () => {
+                    setTimeout(() => URL.revokeObjectURL(outputUrl), 100);
+                };
+                
+                status.classList.add('hidden');
+                result.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                alert('Error during conversion: ' + error.message);
+                status.classList.add('hidden');
+            } finally {
+                progressContainer.classList.add('hidden');
+            }
+        }
+
+        function updateProgress(percent) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            progressBar.style.width = percent + '%';
+            progressText.textContent = percent + '%';
+        }
+    </script>
+</body>
+</html>
