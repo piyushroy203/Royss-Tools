@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0d0d0d;
+            font-family: 'Arial', sans-serif;
+            color: #00ffcc;
+        }
+
+        .calculator {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            width: 340px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #00ffcc;
+        }
+
+        input[type="number"],
+        select {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #00ffcc;
+            color: #0d0d0d;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .convert-btn {
+            background-color: #ff00ff;
+            color: #0d0d0d;
+            border-color: #ff00ff;
+        }
+
+        .convert-btn:hover {
+            background-color: #00ffcc;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .clear-btn {
+            color: #ff5555;
+            border-color: #ff5555;
+        }
+
+        .clear-btn:hover {
+            background-color: #ff5555;
+            color: #0d0d0d;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #00ffcc;
+            background-color: #121212;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #00ffcc;
+            min-height: 60px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2 style="margin: 0 0 20px; color: #00ffcc;">Currency Converter</h2>
+        <div class="input-group">
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" placeholder="Enter amount" min="0.01" step="0.01">
+        </div>
+        <div class="input-group">
+            <label for="from-currency">From Currency:</label>
+            <select id="from-currency">
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="INR">INR - Indian Rupee</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="JPY">JPY - Japanese Yen</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="to-currency">To Currency:</label>
+            <select id="to-currency">
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="INR">INR - Indian Rupee</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="JPY">JPY - Japanese Yen</option>
+            </select>
+        </div>
+        <button class="convert-btn" onclick="convertCurrency()">Convert</button>
+        <button class="clear-btn" onclick="clearInput()">Clear</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        // Predefined exchange rates (relative to USD) as of May 26, 2025
+        const exchangeRates = {
+            USD: 1,
+            EUR: 0.90, // 1 USD = 0.90 EUR
+            INR: 83.50, // 1 USD = 83.50 INR
+            GBP: 0.77, // 1 USD = 0.77 GBP
+            JPY: 149.20 // 1 USD = 149.20 JPY
+        };
+
+        function convertCurrency() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const fromCurrency = document.getElementById('from-currency').value;
+            const toCurrency = document.getElementById('to-currency').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!amount || amount <= 0) {
+                resultDiv.textContent = 'Please enter a valid amount.';
+                resultDiv.style.color = '#ff5555';
+                return;
+            }
+
+            // Convert amount to USD first, then to target currency
+            const amountInUSD = amount / exchangeRates[fromCurrency];
+            const convertedAmount = amountInUSD * exchangeRates[toCurrency];
+
+            resultDiv.style.color = '#00ffcc';
+            resultDiv.textContent = `${amount.toFixed(2)} ${fromCurrency} = ${convertedAmount.toFixed(2)} ${toCurrency}`;
+        }
+
+        function clearInput() {
+            document.getElementById('amount').value = '';
+            document.getElementById('from-currency').value = 'USD';
+            document.getElementById('to-currency').value = 'USD';
+            document.getElementById('result').textContent = '';
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                convertCurrency();
+            } else if (event.key === 'Escape') {
+                clearInput();
+            }
+        });
+    </script>
+</body>
+</html>
