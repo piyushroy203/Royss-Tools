@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0d0d0d;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .calculator {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            width: 340px;
+        }
+
+        .display {
+            background-color: #121212;
+            color: #00ffcc;
+            font-size: 2em;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: right;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            border: 1px solid #00ffcc;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #00ffcc;
+            color: #0d0d0d;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .operator {
+            color: #ff00ff;
+            border-color: #ff00ff;
+        }
+
+        .operator:hover {
+            background-color: #ff00ff;
+            color: #0d0d0d;
+        }
+
+        .equals {
+            background-color: #ff00ff;
+            color: #0d0d0d;
+            border-color: #ff00ff;
+        }
+
+        .equals:hover {
+            background-color: #00ffcc;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .clear {
+            color: #ff5555;
+            border-color: #ff5555;
+        }
+
+        .clear:hover {
+            background-color: #ff5555;
+            color: #0d0d0d;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="clear" onclick="clearDisplay()">C</button>
+            <button onclick="appendToDisplay('(')">(</button>
+            <button onclick="appendToDisplay(')')">)</button>
+            <button class="operator" onclick="appendToDisplay('/')">/</button>
+            <button class="operator" onclick="appendToDisplay('*')">×</button>
+
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button class="operator" onclick="appendToDisplay('+')">+</button>
+            <button class="operator" onclick="appendToDisplay('-')">-</button>
+
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button onclick="appendToDisplay('sin(')">sin</button>
+            <button onclick="appendToDisplay('cos(')">cos</button>
+
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button onclick="appendToDisplay('tan(')">tan</button>
+            <button onclick="appendToDisplay('Math.log10(')">log</button>
+
+            <button onclick="appendToDisplay('0')">0</button>
+            <button onclick="appendToDisplay('.')">.</button>
+            <button onclick="appendToDisplay('Math.PI')">π</button>
+            <button onclick="appendToDisplay('Math.pow(')">x^y</button>
+            <button class="equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let display = document.getElementById('display');
+        let expression = '';
+
+        function appendToDisplay(value) {
+            expression += value;
+            display.textContent = expression || '0';
+        }
+
+        function clearDisplay() {
+            expression = '';
+            display.textContent = '0';
+        }
+
+        function calculate() {
+            try {
+                // Replace mathematical constants and functions for evaluation
+                let evalExpression = expression
+                    .replace(/sin\(/g, 'Math.sin(')
+                    .replace(/cos\(/g, 'Math.cos(')
+                    .replace(/tan\(/g, 'Math.tan(')
+                    .replace(/log\(/g, 'Math.log10(')
+                    .replace(/π/g, 'Math.PI')
+                    .replace(/x\^y/g, 'Math.pow(');
+
+                // Evaluate the expression
+                let result = eval(evalExpression);
+                if (isNaN(result) || !isFinite(result)) {
+                    throw new Error('Invalid calculation');
+                }
+                display.textContent = result;
+                expression = result.toString();
+            } catch (error) {
+                display.textContent = 'Error';
+                expression = '';
+                setTimeout(clearDisplay, 1000);
+            }
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            if (/[0-9]/.test(key)) appendToDisplay(key);
+            else if (key === '.') appendToDisplay('.');
+            else if (key === '+') appendToDisplay('+');
+            else if (key === '-') appendToDisplay('-');
+            else if (key === '*') appendToDisplay('*');
+            else if (key === '/') appendToDisplay('/');
+            else if (key === '(') appendToDisplay('(');
+            else if (key === ')') appendToDisplay(')');
+            else if (key === 'Enter') calculate();
+            else if (key === 'Escape') clearDisplay();
+            else if (key === 'Backspace') {
+                expression = expression.slice(0, -1);
+                display.textContent = expression || '0';
+            }
+        });
+    </script>
+</body>
+</html>
