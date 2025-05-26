@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Encryptor/Decryptor</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0d0d0d;
+            font-family: 'Arial', sans-serif;
+            color: #00ffcc;
+        }
+
+        .crypto {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            width: 340px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #00ffcc;
+        }
+
+        textarea,
+        input[type="number"],
+        select {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        textarea:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .options-group {
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #00ffcc;
+            color: #0d0d0d;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .process-btn {
+            background-color: #ff00ff;
+            color: #0d0d0d;
+            border-color: #ff00ff;
+        }
+
+        .process-btn:hover {
+            background-color: #00ffcc;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .clear-btn {
+            color: #ff5555;
+            border-color: #ff5555;
+        }
+
+        .clear-btn:hover {
+            background-color: #ff5555;
+            color: #0d0d0d;
+        }
+
+        .copy-btn {
+            color: #55ff55;
+            border-color: #55ff55;
+        }
+
+        .copy-btn:hover {
+            background-color: #55ff55;
+            color: #0d0d0d;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #00ffcc;
+            background-color: #121212;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #00ffcc;
+            min-height: 100px;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="crypto">
+        <h2 style="margin: 0 0 20px; color: #00ffcc;">Text Encryptor/Decryptor</h2>
+        <div class="input-group">
+            <label for="input-text">Enter Text:</label>
+            <textarea id="input-text" placeholder="Type or paste your text here"></textarea>
+        </div>
+        <div class="input-group">
+            <label for="key">Key (Shift Value, 1-25):</label>
+            <input type="number" id="key" placeholder="Enter key" min="1" max="25" step="1">
+        </div>
+        <div class="options-group">
+            <select id="operation">
+                <option value="encrypt">Encrypt</option>
+                <option value="decrypt">Decrypt</option>
+            </select>
+        </div>
+        <button class="process-btn" onclick="processText()">Process</button>
+        <button class="clear-btn" onclick="clearInput()">Clear</button>
+        <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function processText() {
+            const inputText = document.getElementById('input-text').value;
+            const key = parseInt(document.getElementById('key').value);
+            const operation = document.getElementById('operation').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!inputText.trim()) {
+                resultDiv.textContent = 'Please enter some text.';
+                resultDiv.style.color = '#ff5555';
+                return;
+            }
+
+            if (!key || key < 1 || key > 25) {
+                resultDiv.textContent = 'Please enter a valid key (1-25).';
+                resultDiv.style.color = '#ff5555';
+                return;
+            }
+
+            const caesarCipher = (text, shift, encrypt = true) => {
+                const shiftAmount = encrypt ? shift : -shift;
+                return text.replace(/[a-zA-Z]/g, char => {
+                    const isUpperCase = char === char.toUpperCase();
+                    const base = isUpperCase ? 65 : 97; // ASCII for 'A' or 'a'
+                    const code = char.charCodeAt(0);
+                    return String.fromCharCode(
+                        ((code - base + shiftAmount + 26) % 26) + base
+                    );
+                });
+            };
+
+            const resultText = operation === 'encrypt'
+                ? caesarCipher(inputText, key, true)
+                : caesarCipher(inputText, key, false);
+
+            resultDiv.style.color = '#00ffcc';
+            resultDiv.textContent = resultText;
+        }
+
+        function clearInput() {
+            document.getElementById('input-text').value = '';
+            document.getElementById('key').value = '';
+            document.getElementById('operation').value = 'encrypt';
+            document.getElementById('result').textContent = '';
+        }
+
+        function copyToClipboard() {
+            const resultText = document.getElementById('result').textContent;
+            if (!resultText) {
+                document.getElementById('result').textContent = 'Nothing to copy.';
+                document.getElementById('result').style.color = '#ff5555';
+                setTimeout(() => {
+                    document.getElementById('result').textContent = '';
+                    document.getElementById('result').style.color = '#00ffcc';
+                }, 1000);
+                return;
+            }
+
+            navigator.clipboard.writeText(resultText).then(() => {
+                document.getElementById('result').textContent = 'Copied to clipboard!';
+                document.getElementById('result').style.color = '#55ff55';
+                setTimeout(() => {
+                    processText(); // Restore result after copy
+                }, 1000);
+            });
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey && event.key === 'c') {
+                copyToClipboard();
+            } else if (event.key === 'Enter' && document.getElementById('input-text').value.trim() && document.getElementById('key').value.trim()) {
+                processText();
+            } else if (event.key === 'Escape') {
+                clearInput();
+            }
+        });
+    </script>
+</body>
+</html>
