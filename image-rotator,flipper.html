@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Rotator/Flipper</title>
+    <style>
+        :root {
+            --black: #0a0a0a; /* Deep black for background */
+            --card-bg: #1c1c1c; /* Slightly lighter black for container */
+            --neon-blue: #00d4ff; /* Neon blue for accents */
+            --neon-pink: #ff007a; /* Neon pink for highlights */
+            --neon-green: #39ff14; /* Neon green for secondary accents */
+            --text-white: #f5f5f5; /* White for primary text */
+            --text-grey: #b0b0b0; /* Light grey for secondary text */
+            --shadow: 0 0 10px rgba(0, 212, 255, 0.3); /* Neon glow shadow */
+            --radius: 5px; /* Minimal radius for sharp look */
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: var(--black);
+            color: var(--text-white);
+            text-align: center;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: auto;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--neon-blue);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 8px var(--neon-blue);
+            color: var(--neon-blue);
+        }
+
+        .input-group {
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: var(--text-grey);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--neon-blue);
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--black);
+            color: var(--text-white);
+            transition: var(--transition);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            background: var(--neon-blue);
+            color: var(--black);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-blue);
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+
+        img {
+            margin-top: 10px;
+            max-width: 100%;
+            border-radius: var(--radius);
+            border: 1px solid var(--neon-green);
+        }
+
+        p {
+            color: var(--text-grey);
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .download-btn {
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+        }
+
+        .download-btn:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 12px var(--neon-pink);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Image Rotator/Flipper</h2>
+        <div class="input-group">
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        <div class="input-group">
+            <label for="rotation">Rotate Image:</label>
+            <select id="rotation">
+                <option value="0">0°</option>
+                <option value="90">90°</option>
+                <option value="180">180°</option>
+                <option value="270">270°</option>
+            </select>
+        </div>
+        <div class="action-buttons">
+            <button onclick="flipHorizontal()">Flip Horizontal</button>
+            <button onclick="flipVertical()">Flip Vertical</button>
+            <button onclick="applyTransform()">Apply Transform</button>
+        </div>
+        <p id="status" class="hidden">Processing image...</p>
+        <img id="preview" class="hidden">
+        <div class="action-buttons hidden" id="downloadSection">
+            <a id="download" download="transformed-image.jpg">
+                <button class="download-btn">Download Transformed Image</button>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let originalImage;
+        let currentRotation = 0;
+        let flipH = false;
+        let flipV = false;
+
+        // Preview the uploaded image
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            originalImage = e.target.files[0];
+            const preview = document.getElementById('preview');
+            preview.src = URL.createObjectURL(originalImage);
+            preview.classList.remove('hidden');
+            resetTransform(); // Reset transformations on new upload
+        });
+
+        function resetTransform() {
+            currentRotation = 0;
+            flipH = false;
+            flipV = false;
+            document.getElementById('rotation').value = '0';
+            document.getElementById('downloadSection').classList.add('hidden');
+        }
+
+        function flipHorizontal() {
+            flipH = !flipH;
+            applyTransform();
+        }
+
+        function flipVertical() {
+            flipV = !flipV;
+            applyTransform();
+        }
+
+        function applyTransform() {
+            const fileInput = document.getElementById('imageInput');
+            const rotation = parseInt(document.getElementById('rotation').value);
+            const status = document.getElementById('status');
+            const preview = document.getElementById('preview');
+            const download = document.getElementById('download');
+            const downloadSection = document.getElementById('downloadSection');
+
+            if (fileInput.files.length === 0) {
+                alert('Please upload an image first.');
+                return;
+            }
+
+            currentRotation = rotation;
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Determine canvas dimensions based on rotation
+                    if (currentRotation === 90 || currentRotation === 270) {
+                        canvas.width = img.height;
+                        canvas.height = img.width;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+
+                    // Apply transformations
+                    ctx.save();
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate((currentRotation * Math.PI) / 180);
+                    if (flipH) ctx.scale(-1, 1);
+                    if (flipV) ctx.scale(1, -1);
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    ctx.restore();
+
+                    status.classList.remove('hidden');
+                    setTimeout(() => {
+                        const transformedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        preview.src = transformedDataUrl;
+                        preview.classList.remove('hidden');
+
+                        download.href = transformedDataUrl;
+                        downloadSection.classList.remove('hidden');
+                        status.classList.add('hidden');
+                    }, 1000);
+                };
+            };
+
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
