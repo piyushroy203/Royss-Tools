@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Blindness Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .image-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            min-height: 400px;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 400px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        select {
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 8px;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        button, .file-label {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover, .file-label:hover {
+            background-color: #00ccaa;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button:active, .file-label:active {
+            transform: scale(0.95);
+        }
+
+        #error {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+            text-shadow: 0 0 5px #ff5555;
+        }
+
+        @media (max-width: 768px) {
+            .image-container {
+                flex-direction: column;
+            }
+
+            .canvas-wrapper {
+                min-height: 300px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .controls {
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Blindness Simulator</h1>
+        <div class="image-container">
+            <div class="canvas-wrapper">
+                <canvas id="originalCanvas"></canvas>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="simulatedCanvas"></canvas>
+            </div>
+        </div>
+        <div class="controls">
+            <select id="simulationType">
+                <option value="normal">Normal Vision</option>
+                <option value="protanopia">Protanopia (Red-Blind)</option>
+                <option value="deuteranopia">Deuteranopia (Green-Blind)</option>
+                <option value="tritanopia">Tritanopia (Blue-Blind)</option>
+                <option value="achromatopsia">Achromatopsia (Monochromacy)</option>
+            </select>
+            <label for="imageUpload" class="file-label">Upload Image</label>
+            <input type="file" id="imageUpload" accept="image/*">
+            <button onclick="clearCanvas()">Clear</button>
+        </div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        const originalCanvas = document.getElementById('originalCanvas');
+        const simulatedCanvas = document.getElementById('simulatedCanvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const simulatedCtx = simulatedCanvas.getContext('2d');
+        const imageUpload = document.getElementById('imageUpload');
+        const simulationType = document.getElementById('simulationType');
+        const error = document.getElementById('error');
+        let currentImage = null;
+
+        // Color blindness simulation matrices (simplified LMS transformations)
+        const colorMatrices = {
+            protanopia: [
+                [0.567, 0.433, 0.000],
+                [0.558, 0.442, 0.000],
+                [0.000, 0.242, 0.758]
+            ],
+            deuteranopia: [
+                [0.625, 0.375, 0.000],
+                [0.700, 0.300, 0.000],
+                [0.000, 0.300, 0.700]
+            ],
+            tritanopia: [
+                [0.950, 0.050, 0.000],
+                [0.000, 0.433, 0.567],
+                [0.000, 0.475, 0.525]
+            ],
+            achromatopsia: [
+                [0.299, 0.587, 0.114],
+                [0.299, 0.587, 0.114],
+                [0.299, 0.587, 0.114]
+            ]
+        };
+
+        function applyColorMatrix(r, g, b, matrix) {
+            const rNew = r * matrix[0][0] + g * matrix[0][1] + b * matrix[0][2];
+            const gNew = r * matrix[1][0] + g * matrix[1][1] + b * matrix[1][2];
+            const bNew = r * matrix[2][0] + g * matrix[2][1] + b * matrix[2][2];
+            return [
+                Math.min(Math.max(Math.round(rNew), 0), 255),
+                Math.min(Math.max(Math.round(gNew), 0), 255),
+                Math.min(Math.max(Math.round(bNew), 0), 255)
+            ];
+        }
+
+        function simulateColorBlindness(imageData, type) {
+            const data = imageData.data;
+            const matrix = colorMatrices[type] || null;
+            if (!matrix) return imageData; // Normal vision, no transformation
+
+            for (let i = 0; i < data.length; i += 4) {
+                const [r, g, b] = applyColorMatrix(data[i], data[i + 1], data[i + 2], matrix);
+                data[i] = r;
+                data[i + 1] = g;
+                data[i + 2] = b;
+            }
+            return imageData;
+        }
+
+        function updateCanvas() {
+            if (!currentImage) {
+                error.textContent = 'Please upload an image first.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+                return;
+            }
+
+            const maxHeight = 400;
+            const maxWidth = originalCanvas.parentElement.offsetWidth - 20;
+            const scale = Math.min(maxWidth / currentImage.width, maxHeight / currentImage.height, 1);
+            originalCanvas.width = simulatedCanvas.width = currentImage.width * scale;
+            originalCanvas.height = simulatedCanvas.height = currentImage.height * scale;
+
+            // Draw original image
+            originalCtx.drawImage(currentImage, 0, 0, originalCanvas.width, originalCanvas.height);
+
+            // Apply color blindness simulation
+            const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            const type = simulationType.value;
+            const simulatedData = simulateColorBlindness(imageData, type);
+            simulatedCtx.putImageData(simulatedData, 0, 0);
+
+            error.textContent = `Simulating ${type === 'normal' ? 'Normal Vision' : simulationType.options[simulationType.selectedIndex].text}`;
+            error.style.color = '#00ffcc';
+            error.style.textShadow = '0 0 5px #00ffcc';
+        }
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const img = new Image();
+                currentImage = img;
+                img.onload = () => {
+                    updateCanvas();
+                };
+                img.onerror = () => {
+                    error.textContent = 'Error loading image.';
+                    error.style.color = '#ff5555';
+                    error.style.textShadow = '0 0 5px #ff5555';
+                };
+                img.src = URL.createObjectURL(file);
+            } else {
+                error.textContent = 'Please upload a valid image file.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+            }
+        });
+
+        simulationType.addEventListener('change', updateCanvas);
+
+        function clearCanvas() {
+            originalCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
+            simulatedCtx.clearRect(0, 0, simulatedCanvas.width, simulatedCanvas.height);
+            originalCanvas.width = simulatedCanvas.width = 0;
+            originalCanvas.height = simulatedCanvas.height = 0;
+            simulationType.value = 'normal';
+            error.textContent = '';
+            imageUpload.value = '';
+            currentImage = null;
+        }
+    </script>
+</body>
+</html>
