@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Picker from Image</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .image-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-wrapper {
+            flex: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            min-height: 400px;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 400px;
+            cursor: crosshair;
+        }
+
+        .color-info {
+            flex: 1;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .color-preview {
+            width: 100%;
+            height: 100px;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .color-values p {
+            margin: 5px 0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        button, .file-label:hover {
+            background-color: #00ccaa;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button, .file-label:active {
+            transform: scale(0.95);
+        }
+
+        #error {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+            text-shadow: 0 0 5px #ff5555;
+        }
+
+        @media (max-width: 768px) {
+            .image-container {
+                flex-direction: column;
+            }
+
+            .canvas-wrapper {
+                min-height: 300px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Picker from Image</h1>
+        <div class="image-container">
+            <div class="canvas-wrapper">
+                <canvas id="imageCanvas"></canvas>
+            </div>
+            <div class="color-info">
+                <div class="color-preview" id="colorPreview"></div>
+                <div class="color-values">
+                    <p id="hexValue">HEX: #000000</p>
+                    <p id="rgbValue">RGB: 0, 0, 0</p>
+                    <p id="hslValue">HSL: 0, 0%, 0%</p>
+                </div>
+            </div>
+        </div>
+        <div class="controls">
+            <label for="imageUpload" class="file-label">Upload Image</label>
+            <input type="file" id="imageUpload" accept="image/*">
+            <button class="file-label" onclick="clearCanvas()">Clear</button>
+        </div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('imageCanvas');
+        const ctx = canvas.getContext('2d');
+        const imageUpload = document.getElementById('imageUpload');
+        const colorPreview = document.getElementById('colorPreview');
+        const hexValue = document.getElementById('hexValue');
+        const rgbValue = document.getElementById('rgbValue');
+        const hslValue = document.getElementById('hslValue');
+        const error = document.getElementById('error');
+        let currentImage = null;
+        let scaleX = 1;
+        let scaleY = 1;
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+        }
+
+        function updateColor(x, y, isClick = false) {
+            if (!currentImage) {
+                error.textContent = 'Please upload an image first.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+                return;
+            }
+            
+            // Ensure coordinates are within canvas bounds
+            x = Math.max(0, Math.min(x, canvas.width - 1));
+            y = Math.max(0, Math.min(y, canvas.height - 1));
+            
+            // Create a temporary canvas to draw the original image at native size
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = currentImage.width;
+            tempCanvas.height = currentImage.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
+            
+            // Calculate the correct position in the original image
+            const origX = Math.floor((x / canvas.width) * currentImage.width);
+            const origY = Math.floor((y / canvas.height) * currentImage.height);
+            
+            const pixel = tempCtx.getImageData(origX, origY, 1, 1).data;
+            const [r, g, b] = pixel;
+            const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0')}`;
+            const [h, s, l] = rgbToHsl(r, g, b);
+            colorPreview.style.backgroundColor = hex;
+            hexValue.textContent = `HEX: ${hex}`;
+            rgbValue.textContent = `RGB: ${r}, ${g}, ${b}`;
+            hslValue.textContent = `HSL: ${h}, ${s}%, ${l}%`;
+            error.textContent = isClick ? 'Color picked!' : 'Hovering...';
+            error.style.color = '#00ffcc';
+            error.style.textShadow = '0 0 5px #00ffcc';
+        }
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const img = new Image();
+                img.onload = () => {
+                    const maxHeight = 400;
+                    const maxWidth = canvas.parentElement.offsetWidth - 20; // Account for padding
+                    const scale = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    currentImage = img;
+                    error.textContent = 'Image loaded successfully!';
+                    error.style.color = '#00ffcc';
+                    error.style.textShadow = '0 0 5px #00ffcc';
+                };
+                img.onerror = () => {
+                    error.textContent = 'Error loading image.';
+                    error.style.color = '#ff5555';
+                    error.style.textShadow = '0 0 5px #ff5555';
+                };
+                img.src = URL.createObjectURL(file);
+            } else {
+                error.textContent = 'Please upload a valid image file.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!currentImage) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            updateColor(x, y, false);
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (!currentImage) {
+                error.textContent = 'Please upload an image first.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            updateColor(x, y, true);
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            if (!currentImage) return;
+            error.textContent = 'Hover over the image to preview colors.';
+            error.style.color = '#e0e0e0';
+            error.style.textShadow = 'none';
+        });
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.width = 0;
+            canvas.height = 0;
+            colorPreview.style.backgroundColor = '#000000';
+            hexValue.textContent = 'HEX: #000000';
+            rgbValue.textContent = 'RGB: 0, 0, 0';
+            hslValue.textContent = 'HSL: 0, 0%, 0%';
+            error.textContent = 'Upload an image to begin.';
+            error.style.color = '#e0e0e0';
+            error.style.textShadow = 'none';
+            imageUpload.value = '';
+            currentImage = null;
+            scaleX = 1;
+            scaleY = 1;
+        }
+
+        // Initialize with a message
+        error.textContent = 'Upload an image to begin.';
+        error.style.color = '#e0e0e0';
+        error.style.textShadow = 'none';
+    </script>
+</body>
+</html>
