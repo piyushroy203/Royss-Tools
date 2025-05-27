@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Minifier</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #252525;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            color: #00ffcc;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .input-group, .output-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #00ffcc;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background-color: #333;
+            color: #e0e0e0;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        button {
+            background-color: #00ffcc;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #ff00ff;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .error {
+            color: #ff4d4d;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .copy-message {
+            color: #00ffcc;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Code Minifier</h1>
+        <div class="input-group">
+            <label for="inputCode">Input Code (HTML/CSS/JS)</label>
+            <textarea id="inputCode" placeholder="Paste your code here..."></textarea>
+        </div>
+        <div class="button-group">
+            <button onclick="minifyCode()">Minify</button>
+            <button onclick="clearFields()">Clear</button>
+        </div>
+        <div class="output-group">
+            <label for="outputCode">Minified Code</label>
+            <textarea id="outputCode" readonly></textarea>
+            <button onclick="copyOutput()">Copy to Clipboard</button>
+            <div id="copyMessage" class="copy-message">Copied to clipboard!</div>
+            <div id="errorMessage" class="error">Please enter code to minify.</div>
+        </div>
+    </div>
+    <script>
+        function minifyCode() {
+            const input = document.getElementById('inputCode').value;
+            const output = document.getElementById('outputCode');
+            const errorMessage = document.getElementById('errorMessage');
+            const copyMessage = document.getElementById('copyMessage');
+
+            errorMessage.style.display = 'none';
+            copyMessage.style.display = 'none';
+
+            if (!input.trim()) {
+                errorMessage.style.display = 'block';
+                output.value = '';
+                return;
+            }
+
+            // Basic minification: remove comments, extra spaces, and line breaks
+            let minified = input
+                .replace(/\/\/.*$/gm, '') // Remove single-line comments
+                .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+                .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+                .replace(/\s*([{};:,])\s*/g, '$1') // Remove spaces around brackets, semicolons, etc.
+                .trim();
+
+            output.value = minified;
+        }
+
+        function clearFields() {
+            document.getElementById('inputCode').value = '';
+            document.getElementById('outputCode').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('copyMessage').style.display = 'none';
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('outputCode');
+            const copyMessage = document.getElementById('copyMessage');
+
+            if (output.value) {
+                navigator.clipboard.writeText(output.value).then(() => {
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                    }, 2000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
