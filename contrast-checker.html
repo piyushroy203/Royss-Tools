@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrast Checker</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .color-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 50px;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 3px;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="text"] {
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 8px;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            flex: 1;
+        }
+
+        input[type="text"]:focus {
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .preview-container {
+            width: 100%;
+            height: 100px;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px #00ffcc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .output-container {
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .output-container p {
+            margin: 5px 0;
+        }
+
+        .pass {
+            color: #00ffcc;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+
+        .fail {
+            color: #ff5555;
+            text-shadow: 0 0 5px #ff5555;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #00ccaa;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #error {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+            text-shadow: 0 0 5px #ff5555;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .color-picker {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            input[type="color"] {
+                width: 60px;
+                height: 60px;
+            }
+
+            input[type="text"] {
+                width: 100%;
+            }
+
+            .preview-container {
+                height: 80px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Contrast Checker</h1>
+        <div class="input-container">
+            <div class="color-picker">
+                <label for="fgColor" style="color: #00ffcc;">Foreground</label>
+                <input type="color" id="fgColor" value="#ffffff">
+                <input type="text" id="fgHex" placeholder="HEX (e.g., #FFFFFF)">
+            </div>
+            <div class="color-picker">
+                <label for="bgColor" style="color: #00ffcc;">Background</label>
+                <input type="color" id="bgColor" value="#000000">
+                <input type="text" id="bgHex" placeholder="HEX (e.g., #000000)">
+            </div>
+        </div>
+        <div class="preview-container" id="preview">Sample Text</div>
+        <div class="output-container">
+            <p id="contrastRatio">Contrast Ratio: 21.00</p>
+            <p id="wcagAA">WCAG AA: <span>Pass</span></p>
+            <p id="wcagAAA">WCAG AAA: <span>Pass</span></p>
+        </div>
+        <div class="controls">
+            <button onclick="checkContrast()">Check Contrast</button>
+            <button onclick="clearInputs()">Clear</button>
+        </div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        function hexToRgb(hex) {
+            hex = hex.replace(/^#/, '');
+            const bigint = parseInt(hex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return [r, g, b];
+        }
+
+        function validateHex(hex) {
+            return /^#?[0-9A-Fa-f]{6}$/.test(hex);
+        }
+
+        function getLuminance(r, g, b) {
+            const a = [r, g, b].map(v => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+        }
+
+        function calculateContrastRatio(l1, l2) {
+            return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+        }
+
+        function updateContrast() {
+            const fgColor = document.getElementById('fgColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            const fgHex = document.getElementById('fgHex');
+            const bgHex = document.getElementById('bgHex');
+            const preview = document.getElementById('preview');
+            const contrastRatio = document.getElementById('contrastRatio');
+            const wcagAA = document.getElementById('wcagAA').querySelector('span');
+            const wcagAAA = document.getElementById('wcagAAA').querySelector('span');
+            const error = document.getElementById('error');
+
+            fgHex.value = fgColor.toUpperCase();
+            bgHex.value = bgColor.toUpperCase();
+
+            const [fgR, fgG, fgB] = hexToRgb(fgColor);
+            const [bgR, bgG, bgB] = hexToRgb(bgColor);
+
+            const fgLuminance = getLuminance(fgR, fgG, fgB);
+            const bgLuminance = getLuminance(bgR, bgG, bgB);
+            const ratio = calculateContrastRatio(fgLuminance, bgLuminance).toFixed(2);
+
+            preview.style.color = fgColor;
+            preview.style.backgroundColor = bgColor;
+            contrastRatio.textContent = `Contrast Ratio: ${ratio}`;
+
+            // WCAG thresholds: AA (4.5 for normal, 3 for large), AAA (7 for normal, 4.5 for large)
+            const aaNormal = ratio >= 4.5 ? 'Pass' : 'Fail';
+            const aaLarge = ratio >= 3 ? 'Pass' : 'Fail';
+            const aaaNormal = ratio >= 7 ? 'Pass' : 'Fail';
+            const aaaLarge = ratio >= 4.5 ? 'Pass' : 'Fail';
+
+            wcagAA.innerHTML = `AA: Normal ${aaNormal}, Large ${aaLarge}`;
+            wcagAA.className = aaNormal === 'Pass' && aaLarge === 'Pass' ? 'pass' : 'fail';
+            wcagAAA.innerHTML = `AAA: Normal ${aaaNormal}, Large ${aaaLarge}`;
+            wcagAAA.className = aaaNormal === 'Pass' && aaaLarge === 'Pass' ? 'pass' : 'fail';
+
+            error.textContent = 'Contrast checked!';
+            error.style.color = '#00ffcc';
+            error.style.textShadow = '0 0 5px #00ffcc';
+        }
+
+        function checkContrast() {
+            const fgHex = document.getElementById('fgHex').value.trim();
+            const bgHex = document.getElementById('bgHex').value.trim();
+            const error = document.getElementById('error');
+
+            if (!validateHex(fgHex) || !validateHex(bgHex)) {
+                error.textContent = 'Invalid HEX code. Use format #RRGGBB or RRGGBB.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+                return;
+            }
+
+            document.getElementById('fgColor').value = fgHex.startsWith('#') ? fgHex : `#${fgHex}`;
+            document.getElementById('bgColor').value = bgHex.startsWith('#') ? bgHex : `#${bgHex}`;
+            updateContrast();
+        }
+
+        function clearInputs() {
+            document.getElementById('fgColor').value = '#ffffff';
+            document.getElementById('bgColor').value = '#000000';
+            document.getElementById('fgHex').value = '#FFFFFF';
+            document.getElementById('bgHex').value = '#000000';
+            document.getElementById('preview').style.color = '#ffffff';
+            document.getElementById('preview').style.backgroundColor = '#000000';
+            document.getElementById('contrastRatio').textContent = 'Contrast Ratio: 21.00';
+            document.getElementById('wcagAA').innerHTML = 'AA: Normal Pass, Large Pass';
+            document.getElementById('wcagAA').className = 'pass';
+            document.getElementById('wcagAAA').innerHTML = 'AAA: Normal Pass, Large Pass';
+            document.getElementById('wcagAAA').className = 'pass';
+            document.getElementById('error').textContent = '';
+        }
+
+        // Real-time preview on color input changes
+        document.getElementById('fgColor').addEventListener('input', updateContrast);
+        document.getElementById('bgColor').addEventListener('input', updateContrast);
+
+        // Update color picker on HEX input changes
+        document.getElementById('fgHex').addEventListener('input', () => {
+            const fgHex = document.getElementById('fgHex').value.trim();
+            const error = document.getElementById('error');
+            if (fgHex && validateHex(fgHex)) {
+                document.getElementById('fgColor').value = fgHex.startsWith('#') ? fgHex : `#${fgHex}`;
+                updateContrast();
+            } else if (fgHex) {
+                error.textContent = 'Invalid foreground HEX code.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+            }
+        });
+
+        document.getElementById('bgHex').addEventListener('input', () => {
+            const bgHex = document.getElementById('bgHex').value.trim();
+            const error = document.getElementById('error');
+            if (bgHex && validateHex(bgHex)) {
+                document.getElementById('bgColor').value = bgHex.startsWith('#') ? bgHex : `#${bgHex}`;
+                updateContrast();
+            } else if (bgHex) {
+                error.textContent = 'Invalid background HEX code.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+            }
+        });
+
+        // Initialize contrast on page load
+        window.addEventListener('load', updateContrast);
+    </script>
+</body>
+</html>
