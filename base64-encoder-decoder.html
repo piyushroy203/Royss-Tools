@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Encoder/Decoder</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #252525;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            color: #00ffcc;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .input-group, .output-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #00ffcc;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background-color: #333;
+            color: #e0e0e0;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        button {
+            background-color: #00ffcc;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #ff00ff;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .error {
+            color: #ff4d4d;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .copy-message {
+            color: #00ffcc;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .mode-toggle button {
+            flex: 1;
+            max-width: 150px;
+        }
+        .mode-toggle button.active {
+            background-color: #ff00ff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Base64 Encoder/Decoder</h1>
+        <div class="mode-toggle">
+            <button id="encodeBtn" class="active" onclick="setMode('encode')">Encode</button>
+            <button id="decodeBtn" onclick="setMode('decode')">Decode</button>
+        </div>
+        <div class="input-group">
+            <label id="inputLabel" for="inputText">Input Text</label>
+            <textarea id="inputText" placeholder="Enter text to encode or Base64 to decode..."></textarea>
+        </div>
+        <div class="button-group">
+            <button id="processBtn" onclick="processText()">Encode</button>
+            <button onclick="clearFields()">Clear</button>
+        </div>
+        <div class="output-group">
+            <label for="outputText">Output</label>
+            <textarea id="outputText" readonly></textarea>
+            <button onclick="copyOutput()">Copy to Clipboard</button>
+            <div id="copyMessage" class="copy-message">Copied to clipboard!</div>
+            <div id="errorMessage" class="error">Please enter text to process.</div>
+        </div>
+    </div>
+    <script>
+        let mode = 'encode';
+
+        function setMode(newMode) {
+            mode = newMode;
+            const encodeBtn = document.getElementById('encodeBtn');
+            const decodeBtn = document.getElementById('decodeBtn');
+            const processBtn = document.getElementById('processBtn');
+            const inputLabel = document.getElementById('inputLabel');
+
+            encodeBtn.classList.toggle('active', mode === 'encode');
+            decodeBtn.classList.toggle('active', mode === 'decode');
+            processBtn.textContent = mode === 'encode' ? 'Encode' : 'Decode';
+            inputLabel.textContent = mode === 'encode' ? 'Input Text' : 'Input Base64';
+        }
+
+        function processText() {
+            const input = document.getElementById('inputText').value;
+            const output = document.getElementById('outputText');
+            const errorMessage = document.getElementById('errorMessage');
+            const copyMessage = document.getElementById('copyMessage');
+
+            errorMessage.style.display = 'none';
+            copyMessage.style.display = 'none';
+
+            if (!input.trim()) {
+                errorMessage.style.display = 'block';
+                output.value = '';
+                return;
+            }
+
+            try {
+                if (mode === 'encode') {
+                    output.value = btoa(input);
+                } else {
+                    output.value = atob(input);
+                }
+            } catch (e) {
+                errorMessage.textContent = 'Invalid Base64 input for decoding.';
+                errorMessage.style.display = 'block';
+                output.value = '';
+            }
+        }
+
+        function clearFields() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('copyMessage').style.display = 'none';
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('outputText');
+            const copyMessage = document.getElementById('copyMessage');
+
+            if (output.value) {
+                navigator.clipboard.writeText(output.value).then(() => {
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                    }, 2000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
