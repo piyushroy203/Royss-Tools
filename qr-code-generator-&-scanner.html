@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator & Scanner</title>
+    <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #252525;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            color: #00ffcc;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .input-group, .output-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #00ffcc;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="file"], textarea {
+            width: 100%;
+            background-color: #333;
+            color: #e0e0e0;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        input[type="file"] {
+            padding: 3px;
+        }
+        input[type="text"]:focus, input[type="file"]:focus, textarea:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #00ffcc;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #ff00ff;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .error {
+            color: #ff4d4d;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .copy-message {
+            color: #00ffcc;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .mode-toggle button {
+            flex: 1;
+            max-width: 150px;
+        }
+        .mode-toggle button.active {
+            background-color: #ff00ff;
+            color: #fff;
+        }
+        .qr-output {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #qrCode {
+            background-color: #fff;
+            padding: 10px;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+        }
+        .download-link {
+            color: #00ffcc;
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .download-link:hover {
+            color: #ff00ff;
+            text-decoration: underline;
+        }
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+            display: none;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Generator & Scanner</h1>
+        <div class="mode-toggle">
+            <button id="generateBtn" class="active" onclick="setMode('generate')">Generate</button>
+            <button id="scanBtn" onclick="setMode('scan')">Scan</button>
+        </div>
+        <div id="generateSection">
+            <div class="input-group">
+                <label for="qrText">Text or URL for QR Code</label>
+                <textarea id="qrText" placeholder="e.g., https://example.com"></textarea>
+                <button onclick="copyQrText()">Copy Text</button>
+                <div id="copyMessage" class="copy-message">Copied to clipboard!</div>
+            </div>
+            <div class="button-group">
+                <button onclick="generateQR()">Generate QR</button>
+                <button onclick="clearFields()">Clear</button>
+            </div>
+            <div class="output-group">
+                <label>Generated QR Code</label>
+                <div id="qrCode" class="qr-output"></div>
+                <a id="downloadQrLink" class="download-link" href="#" download="qrcode.png">Download QR Code</a>
+            </div>
+        </div>
+        <div id="scanSection" style="display: none;">
+            <div class="input-group">
+                <label for="qrImage">Upload QR Code Image</label>
+                <input type="file" id="qrImage" accept="image/*">
+            </div>
+            <div class="input-group">
+                <label>Scan with Webcam</label>
+                <video id="video" autoplay playsinline></video>
+                <button id="startWebcam" onclick="startWebcam()">Start Webcam</button>
+                <button id="stopWebcam" onclick="stopWebcam()" style="display: none;">Stop Webcam</button>
+            </div>
+            <div class="button-group">
+                <button onclick="scanQR()">Scan Image</button>
+                <button onclick="clearFields()">Clear</button>
+            </div>
+            <div class="output-group">
+                <label>Scanned Result</label>
+                <textarea id="scanResult" readonly></textarea>
+                <button onclick="copyScanResult()">Copy Result</button>
+                <div id="scanCopyMessage" class="copy-message">Copied to clipboard!</div>
+            </div>
+        </div>
+        <div id="errorMessage" class="error">Please provide valid input.</div>
+    </div>
+    <script>
+        let mode = 'generate';
+        let qrCode = null;
+        let videoStream = null;
+        let lastBlobUrl = null;
+
+        function setMode(newMode) {
+            mode = newMode;
+            document.getElementById('generateBtn').classList.toggle('active', mode === 'generate');
+            document.getElementById('scanBtn').classList.toggle('active', mode === 'scan');
+            document.getElementById('generateSection').style.display = mode === 'generate' ? 'block' : 'none';
+            document.getElementById('scanSection').style.display = mode === 'scan' ? 'block' : 'none';
+            clearFields();
+        }
+
+        function generateQR() {
+            const qrText = document.getElementById('qrText').value.trim();
+            const qrCodeDiv = document.getElementById('qrCode');
+            const downloadLink = document.getElementById('downloadQrLink');
+            const errorMessage = document.getElementById('errorMessage');
+            const copyMessage = document.getElementById('copyMessage');
+
+            errorMessage.style.display = 'none';
+            copyMessage.style.display = 'none';
+            downloadLink.style.display = 'none';
+            qrCodeDiv.innerHTML = '';
+
+            if (!qrText) {
+                errorMessage.textContent = 'Please enter text or a URL.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Clear any existing QR code
+                if (qrCode) {
+                    qrCode.clear();
+                }
+                
+                qrCode = new QRCode(qrCodeDiv, {
+                    text: qrText,
+                    width: 200,
+                    height: 200,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                // Use a more reliable way to wait for the QR code to render
+                const checkCanvas = setInterval(() => {
+                    const canvas = qrCodeDiv.querySelector('canvas');
+                    if (canvas) {
+                        clearInterval(checkCanvas);
+                        createDownloadLink(canvas);
+                    }
+                }, 100);
+            } catch (e) {
+                errorMessage.textContent = 'Error generating QR code: ' + e.message;
+                errorMessage.style.display = 'block';
+                console.error('QR generation error:', e);
+            }
+        }
+
+        function createDownloadLink(canvas) {
+            const downloadLink = document.getElementById('downloadQrLink');
+            
+            // Clean up previous blob URL if it exists
+            if (lastBlobUrl) {
+                URL.revokeObjectURL(lastBlobUrl);
+                lastBlobUrl = null;
+            }
+            
+            // Convert canvas to blob and create download link
+            canvas.toBlob(blob => {
+                lastBlobUrl = URL.createObjectURL(blob);
+                downloadLink.href = lastBlobUrl;
+                downloadLink.download = `qrcode_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+                downloadLink.style.display = 'block';
+            }, 'image/png');
+        }
+
+        async function scanQR() {
+            const qrImage = document.getElementById('qrImage').files[0];
+            const scanResult = document.getElementById('scanResult');
+            const errorMessage = document.getElementById('errorMessage');
+            const scanCopyMessage = document.getElementById('scanCopyMessage');
+
+            errorMessage.style.display = 'none';
+            scanCopyMessage.style.display = 'none';
+            scanResult.value = '';
+
+            if (!qrImage) {
+                errorMessage.textContent = 'Please upload a QR code image.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                const img = new Image();
+                img.src = URL.createObjectURL(qrImage);
+                await new Promise(resolve => img.onload = resolve);
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                URL.revokeObjectURL(img.src);
+
+                if (code) {
+                    scanResult.value = code.data;
+                } else {
+                    errorMessage.textContent = 'No QR code found in the image.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (e) {
+                errorMessage.textContent = 'Error scanning QR code: ' + e.message;
+                errorMessage.style.display = 'block';
+                console.error('QR scan error:', e);
+            }
+        }
+
+        async function startWebcam() {
+            const video = document.getElementById('video');
+            const startWebcamBtn = document.getElementById('startWebcam');
+            const stopWebcamBtn = document.getElementById('stopWebcam');
+            const errorMessage = document.getElementById('errorMessage');
+            const scanResult = document.getElementById('scanResult');
+            const scanCopyMessage = document.getElementById('scanCopyMessage');
+
+            errorMessage.style.display = 'none';
+            scanCopyMessage.style.display = 'none';
+
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = videoStream;
+                video.style.display = 'block';
+                startWebcamBtn.style.display = 'none';
+                stopWebcamBtn.style.display = 'block';
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                function scanFrame() {
+                    if (!videoStream) return;
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    if (code) {
+                        scanResult.value = code.data;
+                        stopWebcam();
+                    } else {
+                        requestAnimationFrame(scanFrame);
+                    }
+                }
+                requestAnimationFrame(scanFrame);
+            } catch (e) {
+                errorMessage.textContent = 'Error accessing webcam: ' + e.message;
+                errorMessage.style.display = 'block';
+                console.error('Webcam error:', e);
+            }
+        }
+
+        function stopWebcam() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            document.getElementById('video').style.display = 'none';
+            document.getElementById('startWebcam').style.display = 'block';
+            document.getElementById('stopWebcam').style.display = 'none';
+        }
+
+        function copyQrText() {
+            const qrText = document.getElementById('qrText').value.trim();
+            const copyMessage = document.getElementById('copyMessage');
+            if (qrText) {
+                navigator.clipboard.writeText(qrText).then(() => {
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => copyMessage.style.display = 'none', 2000);
+                }).catch(err => console.error('Copy error:', err));
+            }
+        }
+
+        function copyScanResult() {
+            const scanResult = document.getElementById('scanResult').value.trim();
+            const scanCopyMessage = document.getElementById('scanCopyMessage');
+            if (scanResult) {
+                navigator.clipboard.writeText(scanResult).then(() => {
+                    scanCopyMessage.style.display = 'block';
+                    setTimeout(() => scanCopyMessage.style.display = 'none', 2000);
+                }).catch(err => console.error('Copy error:', err));
+            }
+        }
+
+        function clearFields() {
+            document.getElementById('qrText').value = '';
+            document.getElementById('qrCode').innerHTML = '';
+            document.getElementById('downloadQrLink').style.display = 'none';
+            document.getElementById('qrImage').value = '';
+            document.getElementById('scanResult').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('copyMessage').style.display = 'none';
+            document.getElementById('scanCopyMessage').style.display = 'none';
+            stopWebcam();
+            if (lastBlobUrl) {
+                URL.revokeObjectURL(lastBlobUrl);
+                lastBlobUrl = null;
+            }
+        }
+    </script>
+</body>
+</html>
