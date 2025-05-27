@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Generator</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .color-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 50px;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 3px;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        select {
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 8px;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .preview-container {
+            width: 100%;
+            height: 200px;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .output-container {
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .output-container p {
+            margin: 5px 0;
+            word-break: break-all;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #00ccaa;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #error {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+            text-shadow: 0 0 5px #ff5555;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .color-picker {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            input[type="color"] {
+                width: 60px;
+                height: 60px;
+            }
+
+            select {
+                width: 100%;
+            }
+
+            .preview-container {
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gradient Generator</h1>
+        <div class="input-container">
+            <div class="color-picker">
+                <label for="color1" style="color: #00ffcc;">Color 1</label>
+                <input type="color" id="color1" value="#ff5555">
+            </div>
+            <div class="color-picker">
+                <label for="color2" style="color: #00ffcc;">Color 2</label>
+                <input type="color" id="color2" value="#00ffcc">
+            </div>
+            <select id="direction">
+                <option value="to right">To Right</option>
+                <option value="to left">To Left</option>
+                <option value="to bottom">To Bottom</option>
+                <option value="to top">To Top</option>
+                <option value="to bottom right">To Bottom Right</option>
+                <option value="to bottom left">To Bottom Left</option>
+                <option value="to top right">To Top Right</option>
+                <option value="to top left">To Top Left</option>
+            </select>
+        </div>
+        <div class="preview-container" id="preview"></div>
+        <div class="output-container">
+            <p id="cssOutput">background: linear-gradient(to right, #ff5555, #00ffcc);</p>
+        </div>
+        <div class="controls">
+            <button onclick="generateGradient()">Generate</button>
+            <button onclick="copyToClipboard()">Copy CSS</button>
+            <button onclick="clearInputs()">Clear</button>
+        </div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        function updateGradient() {
+            const color1 = document.getElementById('color1').value;
+            const color2 = document.getElementById('color2').value;
+            const direction = document.getElementById('direction').value;
+            const preview = document.getElementById('preview');
+            const cssOutput = document.getElementById('cssOutput');
+            const error = document.getElementById('error');
+
+            const gradient = `linear-gradient(${direction}, ${color1}, ${color2})`;
+            preview.style.background = gradient;
+            cssOutput.textContent = `background: ${gradient};`;
+            error.textContent = 'Gradient updated!';
+            error.style.color = '#00ffcc';
+            error.style.textShadow = '0 0 5px #00ffcc';
+        }
+
+        function generateGradient() {
+            updateGradient();
+            document.getElementById('error').textContent = 'Gradient generated successfully!';
+            document.getElementById('error').style.color = '#00ffcc';
+            document.getElementById('error').style.textShadow = '0 0 5px #00ffcc';
+        }
+
+        function copyToClipboard() {
+            const cssOutput = document.getElementById('cssOutput').textContent;
+            navigator.clipboard.writeText(cssOutput).then(() => {
+                document.getElementById('error').textContent = 'CSS copied to clipboard!';
+                document.getElementById('error').style.color = '#00ffcc';
+                document.getElementById('error').style.textShadow = '0 0 5px #00ffcc';
+            }).catch(() => {
+                document.getElementById('error').textContent = 'Failed to copy CSS.';
+                document.getElementById('error').style.color = '#ff5555';
+                document.getElementById('error').style.textShadow = '0 0 5px #ff5555';
+            });
+        }
+
+        function clearInputs() {
+            document.getElementById('color1').value = '#ff5555';
+            document.getElementById('color2').value = '#00ffcc';
+            document.getElementById('direction').value = 'to right';
+            document.getElementById('preview').style.background = 'linear-gradient(to right, #ff5555, #00ffcc)';
+            document.getElementById('cssOutput').textContent = 'background: linear-gradient(to right, #ff5555, #00ffcc);';
+            document.getElementById('error').textContent = '';
+        }
+
+        // Real-time preview on input changes
+        document.getElementById('color1').addEventListener('input', updateGradient);
+        document.getElementById('color2').addEventListener('input', updateGradient);
+        document.getElementById('direction').addEventListener('change', updateGradient);
+
+        // Initialize gradient on page load
+        window.addEventListener('load', updateGradient);
+    </script>
+</body>
+</html>
