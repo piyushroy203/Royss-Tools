@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regex Tester</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #252525;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            color: #00ffcc;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .input-group, .output-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #00ffcc;
+            font-size: 14px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            background-color: #333;
+            color: #e0e0e0;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        button {
+            background-color: #00ffcc;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #ff00ff;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .error {
+            color: #ff4d4d;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .copy-message {
+            color: #00ffcc;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .output-group {
+            display: grid;
+            gap: 10px;
+        }
+        .matches-list {
+            background-color: #333;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .matches-list:empty::before {
+            content: 'No matches found';
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Regex Tester</h1>
+        <div class="input-group">
+            <label for="regexInput">Regular Expression</label>
+            <input type="text" id="regexInput" placeholder="e.g., [a-z]+">
+        </div>
+        <div class="input-group">
+            <label for="testString">Test String</label>
+            <textarea id="testString" placeholder="Enter text to test against the regex..."></textarea>
+        </div>
+        <div class="button-group">
+            <button onclick="testRegex()">Test</button>
+            <button onclick="clearFields()">Clear</button>
+        </div>
+        <div class="output-group">
+            <label>Matches</label>
+            <div id="matchesOutput" class="matches-list"></div>
+            <button onclick="copyMatches()">Copy Matches</button>
+            <div id="copyMessage" class="copy-message">Copied to clipboard!</div>
+            <div id="errorMessage" class="error">Please enter a valid regex and test string.</div>
+        </div>
+    </div>
+    <script>
+        function testRegex() {
+            const regexInput = document.getElementById('regexInput').value.trim();
+            const testString = document.getElementById('testString').value.trim();
+            const matchesOutput = document.getElementById('matchesOutput');
+            const errorMessage = document.getElementById('errorMessage');
+            const copyMessage = document.getElementById('copyMessage');
+
+            // Reset output and messages
+            matchesOutput.innerHTML = '';
+            errorMessage.style.display = 'none';
+            copyMessage.style.display = 'none';
+
+            // Validate inputs
+            if (!regexInput || !testString) {
+                errorMessage.textContent = 'Please enter both a regex and a test string.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Create regex with global flag
+                const regex = new RegExp(regexInput, 'g');
+                const matches = testString.match(regex) || [];
+
+                // Display matches
+                if (matches.length > 0) {
+                    matches.forEach(match => {
+                        const div = document.createElement('div');
+                        div.textContent = match;
+                        matchesOutput.appendChild(div);
+                    });
+                } else {
+                    matchesOutput.innerHTML = '<div>No matches found</div>';
+                }
+            } catch (e) {
+                errorMessage.textContent = 'Invalid regular expression: ' + e.message;
+                errorMessage.style.display = 'block';
+                console.error('Regex error:', e.message);
+            }
+        }
+
+        function clearFields() {
+            document.getElementById('regexInput').value = '';
+            document.getElementById('testString').value = '';
+            document.getElementById('matchesOutput').innerHTML = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('copyMessage').style.display = 'none';
+        }
+
+        function copyMatches() {
+            const matchesOutput = document.getElementById('matchesOutput');
+            const copyMessage = document.getElementById('copyMessage');
+            const matches = Array.from(matchesOutput.querySelectorAll('div'))
+                                .map(node => node.textContent)
+                                .filter(text => text !== 'No matches found')
+                                .join('\n');
+
+            if (matches) {
+                navigator.clipboard.writeText(matches).then(() => {
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Copy error:', err);
+                });
+            } else {
+                console.log('No matches to copy');
+            }
+        }
+    </script>
+</body>
+</html>
