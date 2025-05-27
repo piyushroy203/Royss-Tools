@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Encoder/Decoder</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .editor-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .editor, .output {
+            flex: 1;
+            min-height: 400px;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #e0e0e0;
+            resize: none;
+            outline: none;
+        }
+
+        .editor:focus, .output:focus {
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #00ccaa;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #error {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+            text-shadow: 0 0 5px #ff5555;
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+            }
+
+            .editor, .output {
+                min-height: 300px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>URL Encoder/Decoder</h1>
+        <div class="editor-container">
+            <textarea class="editor" id="urlInput" placeholder="Enter your URL or text here..."></textarea>
+            <textarea class="output" id="urlOutput" readonly placeholder="Encoded/Decoded result will appear here..."></textarea>
+        </div>
+        <div class="controls">
+            <button onclick="encodeURL()">Encode URL</button>
+            <button onclick="decodeURL()">Decode URL</button>
+            <button onclick="clearEditors()">Clear</button>
+        </div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        function encodeURL() {
+            const input = document.getElementById('urlInput').value;
+            const output = document.getElementById('urlOutput');
+            const error = document.getElementById('error');
+
+            try {
+                output.value = encodeURIComponent(input);
+                error.textContent = 'URL encoded successfully!';
+                error.style.color = '#00ffcc';
+                error.style.textShadow = '0 0 5px #00ffcc';
+            } catch (e) {
+                output.value = '';
+                error.textContent = 'Error encoding URL: ' + e.message;
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+            }
+        }
+
+        function decodeURL() {
+            const input = document.getElementById('urlInput').value;
+            const output = document.getElementById('urlOutput');
+            const error = document.getElementById('error');
+
+            try {
+                output.value = decodeURIComponent(input);
+                error.textContent = 'URL decoded successfully!';
+                error.style.color = '#00ffcc';
+                error.style.textShadow = '0 0 5px #00ffcc';
+            } catch (e) {
+                output.value = '';
+                error.textContent = 'Error decoding URL: ' + e.message;
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+            }
+        }
+
+        function clearEditors() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('urlOutput').value = '';
+            document.getElementById('error').textContent = '';
+        }
+    </script>
+</body>
+</html>
