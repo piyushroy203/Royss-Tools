@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEX to RGB Converter</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #e0e0e0;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .color-preview {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .output-container {
+            background-color: #2a2a2a;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .output-container p {
+            margin: 5px 0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #00ccaa;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #error {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+            text-shadow: 0 0 5px #ff5555;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .input-container {
+                flex-direction: column;
+            }
+
+            .color-preview {
+                width: 100%;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HEX to RGB Converter</h1>
+        <div class="input-container">
+            <input type="text" id="hexInput" placeholder="Enter HEX color (e.g., #FF0000)">
+            <div class="color-preview" id="colorPreview"></div>
+        </div>
+        <div class="output-container">
+            <p id="rgbValue">RGB: 0, 0, 0</p>
+            <p id="hslValue">HSL: 0, 0%, 0%</p>
+        </div>
+        <div class="controls">
+            <button onclick="convertHex()">Convert</button>
+            <button onclick="clearInput()">Clear</button>
+        </div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+        }
+
+        function validateHex(hex) {
+            return /^#?[0-9A-Fa-f]{6}$/.test(hex);
+        }
+
+        function hexToRgb(hex) {
+            hex = hex.replace(/^#/, '');
+            const bigint = parseInt(hex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return [r, g, b];
+        }
+
+        function convertHex() {
+            const hexInput = document.getElementById('hexInput').value.trim();
+            const colorPreview = document.getElementById('colorPreview');
+            const rgbValue = document.getElementById('rgbValue');
+            const hslValue = document.getElementById('hslValue');
+            const error = document.getElementById('error');
+
+            if (!validateHex(hexInput)) {
+                error.textContent = 'Invalid HEX code. Use format #RRGGBB or RRGGBB.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+                colorPreview.style.backgroundColor = '#000000';
+                rgbValue.textContent = 'RGB: 0, 0, 0';
+                hslValue.textContent = 'HSL: 0, 0%, 0%';
+                return;
+            }
+
+            const hex = hexInput.startsWith('#') ? hexInput : `#${hexInput}`;
+            const [r, g, b] = hexToRgb(hex);
+            const [h, s, l] = rgbToHsl(r, g, b);
+
+            colorPreview.style.backgroundColor = hex;
+            rgbValue.textContent = `RGB: ${r}, ${g}, ${b}`;
+            hslValue.textContent = `HSL: ${h}, ${s}%, ${l}%`;
+            error.textContent = 'Color converted successfully!';
+            error.style.color = '#00ffcc';
+            error.style.textShadow = '0 0 5px #00ffcc';
+        }
+
+        function clearInput() {
+            document.getElementById('hexInput').value = '';
+            document.getElementById('colorPreview').style.backgroundColor = '#000000';
+            document.getElementById('rgbValue').textContent = 'RGB: 0, 0, 0';
+            document.getElementById('hslValue').textContent = 'HSL: 0, 0%, 0%';
+            document.getElementById('error').textContent = '';
+        }
+
+        // Real-time preview on input
+        document.getElementById('hexInput').addEventListener('input', () => {
+            const hexInput = document.getElementById('hexInput').value.trim();
+            const colorPreview = document.getElementById('colorPreview');
+            const rgbValue = document.getElementById('rgbValue');
+            const hslValue = document.getElementById('hslValue');
+            const error = document.getElementById('error');
+
+            if (!hexInput) {
+                colorPreview.style.backgroundColor = '#000000';
+                rgbValue.textContent = 'RGB: 0, 0, 0';
+                hslValue.textContent = 'HSL: 0, 0%, 0%';
+                error.textContent = '';
+                return;
+            }
+
+            if (!validateHex(hexInput)) {
+                error.textContent = 'Invalid HEX code. Use format #RRGGBB or RRGGBB.';
+                error.style.color = '#ff5555';
+                error.style.textShadow = '0 0 5px #ff5555';
+                return;
+            }
+
+            const hex = hexInput.startsWith('#') ? hexInput : `#${hexInput}`;
+            const [r, g, b] = hexToRgb(hex);
+            const [h, s, l] = rgbToHsl(r, g, b);
+
+            colorPreview.style.backgroundColor = hex;
+            rgbValue.textContent = `RGB: ${r}, ${g}, ${b}`;
+            hslValue.textContent = `HSL: ${h}, ${s}%, ${l}%`;
+            error.textContent = 'Valid HEX code!';
+            error.style.color = '#00ffcc';
+            error.style.textShadow = '0 0 5px #00ffcc';
+        });
+    </script>
+</body>
+</html>
